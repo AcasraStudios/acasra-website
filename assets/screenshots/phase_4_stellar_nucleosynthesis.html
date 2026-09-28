@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MATTER SCATTER — Stellar Nucleosynthesis</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#ffe6d9;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;display:flex;align-items:center;justify-content:center;}
+#stage{width:1920px;height:1080px;position:relative;transform-origin:center center;flex-shrink:0;}
+#c{display:block;position:absolute;inset:0;}
+/* Phase 4's background is pale (c2BgColor) — real game flips HUD text to
+   dark here via body.ch2, same colors reused directly below instead of
+   the light-on-dark defaults every other phase file uses. */
+#hud-score{position:absolute;top:14px;right:18px;color:rgba(0,0,0,0.4);font-size:9px;letter-spacing:2px;}
+#pause-btn{position:absolute;top:14px;left:16px;color:rgba(0,0,0,0.55);font-size:13px;padding:8px 12px;}
+#phase-hud{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;}
+#phase-name{color:rgba(0,0,0,0.4);font-size:8px;letter-spacing:3px;text-transform:uppercase;}
+#formula-quick-btn{background:none;border:1px solid rgba(0,0,0,0.14);color:rgba(0,0,0,0.32);font-size:12px;width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;padding:0;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c" width="1920" height="1080"></canvas>
+  <div id="pause-btn">II</div>
+  <div id="hud-score">SCORE&nbsp;&nbsp;712.6</div>
+  <div id="phase-hud"><span id="phase-name">Stellar Nucleosynthesis</span><button id="formula-quick-btn">⚛</button></div>
+</div>
+<script>
+// ── Static marketing hero-shot — Phase 4 (Stellar Nucleosynthesis) ──────
+// Iron-56 forming as a dense packed-disk nucleon cluster (the real game's
+// "sunflower" packing — see matter_v7.5.html's Phase 4 nucleus-growth
+// rewrite) — background is the real late-stage c2BgColor() pale tint
+// (#ffe6d9), not the dark-space bloom every other phase file uses. See the
+// Prelogue file for the general shared-recipe writeup.
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=1920,H=1080,CX=W/2,CY=H/2;
+function fitStage(){const s=Math.min(window.innerWidth/W,window.innerHeight/H);document.getElementById('stage').style.transform=`scale(${s})`;}
+fitStage();window.addEventListener('resize',fitStage);
+
+function mixRgb(rgbStr,target,t){const p=rgbStr.split(',').map(Number);return`${Math.round(p[0]+(target[0]-p[0])*t)},${Math.round(p[1]+(target[1]-p[1])*t)},${Math.round(p[2]+(target[2]-p[2])*t)}`;}
+function sphere(x,y,r,rgbStr,alpha=1){
+  const lx=x-r*0.38,ly=y-r*0.4;
+  const lit=mixRgb(rgbStr,[255,255,255],0.85),shadow=mixRgb(rgbStr,[0,0,0],0.62);
+  const g=ctx.createRadialGradient(lx,ly,r*0.05,x,y,r*1.05);
+  g.addColorStop(0,`rgba(${lit},${0.95*alpha})`);g.addColorStop(0.35,`rgba(${rgbStr},${0.95*alpha})`);g.addColorStop(1,`rgba(${shadow},${0.95*alpha})`);
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+}
+function glow(x,y,r,rgbStr,alpha){
+  ctx.globalCompositeOperation='screen';
+  const g=ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,`rgba(${rgbStr},${alpha})`);g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  ctx.globalCompositeOperation='source-over';
+}
+function bolt(x1,y1,x2,y2,coreRgb,haloRgb,alpha){
+  const segs=4+Math.floor(Math.random()*3);const pts=[{x:x1,y:y1}];
+  for(let s=1;s<segs;s++){const t=s/segs,spread=18*(1-Math.abs(t-0.5)*1.8);pts.push({x:x1+(x2-x1)*t+(Math.random()-0.5)*spread,y:y1+(y2-y1)*t+(Math.random()-0.5)*spread});}
+  pts.push({x:x2,y:y2});
+  ctx.globalCompositeOperation='screen';
+  const a=alpha*(0.6+Math.random()*0.4);
+  ctx.strokeStyle=`rgba(${coreRgb},${a})`;ctx.lineWidth=1+Math.random()*0.7;
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.stroke();
+  ctx.globalCompositeOperation='source-over';
+}
+function ringPts(cx,cy,count,rMin,rMax){
+  const pts=[];
+  for(let i=0;i<count;i++){const a=(i/count)*Math.PI*2+(Math.random()-0.5)*(Math.PI*2/count)*0.7,r=rMin+Math.random()*(rMax-rMin);pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});}
+  return pts;
+}
+
+const QC={red:'255,51,85',blue:'68,153,255'};
+const AMBER_CORE='255,150,40',AMBER_HALO='255,60,10';
+
+ctx.fillStyle='#ffe6d9';ctx.fillRect(0,0,W,H); // real late-stage c2BgColor() tint
+
+// Packed-disk nucleus — real game grows Iron-56 as a sunflower-spiral
+// packing of small nucleon spheres with nearest-neighbor bond lines rather
+// than clean rings; approximated with a golden-angle spiral fill here.
+function drawNucleus(cx,cy,n,unitR,coreR){
+  const golden=Math.PI*(3-Math.sqrt(5));
+  const pos=[];
+  for(let i=0;i<n;i++){
+    const frac=i/n,r=coreR*Math.sqrt(frac),a=i*golden;
+    pos.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r,col:i%2===0?'red':'blue'});
+  }
+  // Warm energy glow behind the whole nucleus
+  glow(cx,cy,coreR*2.4,'255,170,90',0.22);
+  // Nearest-neighbor-ish bonds: connect each nucleon to its 2 closest others
+  for(let i=0;i<pos.length;i++){
+    const dists=pos.map((p,j)=>({j,d:(p.x-pos[i].x)**2+(p.y-pos[i].y)**2})).sort((a,b)=>a.d-b.d);
+    for(let k=1;k<=2;k++){const o=pos[dists[k].j];if(dists[k].d<(unitR*4)**2)bolt(pos[i].x,pos[i].y,o.x,o.y,'200,140,90','180,110,60',0.14);}
+  }
+  for(const p of pos)sphere(p.x,p.y,unitR,QC[p.col]);
+  return pos;
+}
+
+// Player nucleus — the big one, dead center: 56 nucleons, Iron-56 itself
+const corePos=drawNucleus(CX,CY,56,15,235);
+
+// Loose incoming nucleons/small clusters approaching from the frame edges,
+// each with a capture bolt reaching toward the core
+for(const p of ringPts(CX,CY,16,320,900)){
+  const col=Math.random()<0.5?'red':'blue',r=13+Math.random()*7;
+  sphere(p.x,p.y,r,QC[col]);
+  const nearest=corePos[Math.floor(Math.random()*corePos.length)];
+  if(Math.random()<0.7)bolt(p.x,p.y,nearest.x,nearest.y,AMBER_CORE,AMBER_HALO,0.4);
+}
+</script>
+</body>
+</html>

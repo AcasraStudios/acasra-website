@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MATTER SCATTER — Stardust</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#010108;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;display:flex;align-items:center;justify-content:center;}
+#stage{width:1920px;height:1080px;position:relative;transform-origin:center center;flex-shrink:0;}
+#c{display:block;position:absolute;inset:0;}
+#hud-score{position:absolute;top:14px;right:18px;color:rgba(255,255,255,0.4);font-size:9px;letter-spacing:2px;}
+#pause-btn{position:absolute;top:14px;left:16px;color:rgba(255,255,255,0.55);font-size:13px;padding:8px 12px;}
+#phase-hud{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;}
+#phase-name{color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:3px;text-transform:uppercase;}
+#formula-quick-btn{background:none;border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.32);font-size:12px;width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;padding:0;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c" width="1920" height="1080"></canvas>
+  <div id="pause-btn">II</div>
+  <div id="hud-score">SCORE&nbsp;&nbsp;789.3</div>
+  <div id="phase-hud"><span id="phase-name">Stardust</span><button id="formula-quick-btn">⚛</button></div>
+</div>
+<script>
+// ── Static marketing hero-shot — Phase 5 (Stardust) ──────────────────────
+// Rock field using the real P5_FIRE_MID/COOL/COOL_NPC slate-gray palette
+// (matter_v7.5.html — corrected away from an earlier too-orange rock tint
+// per project history) plus jagged silhouettes in the same spirit as the
+// real makeRockVerts()/_p5RockCore() irregular-polygon renderer, and the
+// real Phase 5 background-bloom target. See the Prelogue file for the
+// general shared-recipe writeup.
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=1920,H=1080,CX=W/2,CY=H/2;
+function fitStage(){const s=Math.min(window.innerWidth/W,window.innerHeight/H);document.getElementById('stage').style.transform=`scale(${s})`;}
+fitStage();window.addEventListener('resize',fitStage);
+
+function mixRgb(rgbStr,target,t){const p=rgbStr.split(',').map(Number);return`${Math.round(p[0]+(target[0]-p[0])*t)},${Math.round(p[1]+(target[1]-p[1])*t)},${Math.round(p[2]+(target[2]-p[2])*t)}`;}
+function glow(x,y,r,rgbStr,alpha){
+  ctx.globalCompositeOperation='screen';
+  const g=ctx.createRadialGradient(x,y,0,x,y,r);
+  g.addColorStop(0,`rgba(${rgbStr},${alpha})`);g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  ctx.globalCompositeOperation='source-over';
+}
+function bolt(x1,y1,x2,y2,coreRgb,haloRgb,alpha){
+  const segs=4+Math.floor(Math.random()*3);const pts=[{x:x1,y:y1}];
+  for(let s=1;s<segs;s++){const t=s/segs,spread=22*(1-Math.abs(t-0.5)*1.8);pts.push({x:x1+(x2-x1)*t+(Math.random()-0.5)*spread,y:y1+(y2-y1)*t+(Math.random()-0.5)*spread});}
+  pts.push({x:x2,y:y2});
+  ctx.globalCompositeOperation='screen';
+  const a=alpha*(0.6+Math.random()*0.4);
+  ctx.strokeStyle=`rgba(${coreRgb},${a})`;ctx.lineWidth=1+Math.random()*0.8;
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.stroke();
+  ctx.strokeStyle=`rgba(${haloRgb},${a*0.3})`;ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.stroke();
+  ctx.globalCompositeOperation='source-over';
+}
+function bgBloom(rgbArr,alpha){
+  ctx.globalCompositeOperation='lighter';
+  const positions=[[0.22,0.22],[0.78,0.22],[0.22,0.82],[0.78,0.82],[0.5,0.5]];
+  for(const[fx,fy]of positions){
+    const x=W*fx+(Math.random()-0.5)*W*0.1,y=H*fy+(Math.random()-0.5)*H*0.1,r=380+Math.random()*220;
+    const g=ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,`rgba(${rgbArr[0]},${rgbArr[1]},${rgbArr[2]},${alpha})`);g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalCompositeOperation='source-over';
+}
+function ringPts(cx,cy,count,rMin,rMax){
+  const pts=[];
+  for(let i=0;i<count;i++){const a=(i/count)*Math.PI*2+(Math.random()-0.5)*(Math.PI*2/count)*0.7,r=rMin+Math.random()*(rMax-rMin);pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});}
+  return pts;
+}
+function rockVerts(n){const v=[];for(let i=0;i<n;i++){v.push({a:(i/n)*Math.PI*2+(Math.random()-0.5)*(Math.PI*2/n)*0.35,r:0.65+Math.random()*0.6});}return v;}
+function rock(cx,cy,r,verts,rot,rgbStr,alpha=1){
+  ctx.fillStyle=`rgba(${rgbStr},${alpha})`;
+  ctx.beginPath();
+  verts.forEach((v,i)=>{const a=v.a+rot,rr=v.r*r,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle=`rgba(${mixRgb(rgbStr,[255,255,255],0.35)},${0.5*alpha})`;
+  ctx.beginPath();ctx.arc(cx-r*0.28,cy-r*0.28,r*0.4,0,Math.PI*2);ctx.fill();
+}
+
+const MID='176,184,196',COOL='122,130,144',COOL_NPC='140,134,128',EMBER='221,68,17';
+const AMBER_CORE='255,150,40',AMBER_HALO='255,60,10';
+
+ctx.fillStyle='#010108';ctx.fillRect(0,0,W,H);
+bgBloom([255,255,255],0.13); // real Phase 5 BLOOM_TARGETS entry
+
+// Cosmic ray streaks cutting across the field
+for(let i=0;i<5;i++){
+  const y0=Math.random()*H,ang=(-0.3+Math.random()*0.6);
+  ctx.globalCompositeOperation='screen';
+  ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=2;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(0,y0);ctx.lineTo(W,y0+Math.tan(ang)*W);ctx.stroke();
+  ctx.globalCompositeOperation='source-over';
+}
+
+const allPts=[];
+for(const p of ringPts(CX,CY,40,150,1300)){
+  const isEmber=Math.random()<0.18;
+  const r=16+Math.random()*36;
+  const col=isEmber?EMBER:(Math.random()<0.5?COOL:COOL_NPC);
+  if(isEmber)glow(p.x,p.y,r*3,EMBER,0.4);
+  rock(p.x,p.y,r,rockVerts(8+Math.floor(Math.random()*3)),Math.random()*Math.PI*2,col);
+  allPts.push(p);
+}
+for(let i=0;i<allPts.length;i++)for(let j=i+1;j<allPts.length;j++){
+  const dx=allPts[i].x-allPts[j].x,dy=allPts[i].y-allPts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+  if(d<160&&Math.random()<0.16)bolt(allPts[i].x,allPts[i].y,allPts[j].x,allPts[j].y,AMBER_CORE,AMBER_HALO,0.55);
+}
+
+// Player — the biggest rock, dead center, ember-rimmed
+glow(CX,CY,340,EMBER,0.22);
+rock(CX,CY,150,rockVerts(11),0.7,MID);
+</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MATTER SCATTER — Dark Ages</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#010108;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;display:flex;align-items:center;justify-content:center;}
+#stage{width:1920px;height:1080px;position:relative;transform-origin:center center;flex-shrink:0;}
+#c{display:block;position:absolute;inset:0;}
+#hud-score{position:absolute;top:14px;right:18px;color:rgba(255,255,255,0.4);font-size:9px;letter-spacing:2px;}
+#pause-btn{position:absolute;top:14px;left:16px;color:rgba(255,255,255,0.55);font-size:13px;padding:8px 12px;}
+#phase-hud{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;}
+#phase-name{color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:3px;text-transform:uppercase;}
+#formula-quick-btn{background:none;border:1px solid rgba(255,255,255,0.14);color:rgba(255,255,255,0.32);font-size:12px;width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;padding:0;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c" width="1920" height="1080"></canvas>
+  <div id="pause-btn">II</div>
+  <div id="hud-score">SCORE&nbsp;&nbsp;628.4</div>
+  <div id="phase-hud"><span id="phase-name">Dark Ages</span><button id="formula-quick-btn">⚛</button></div>
+</div>
+<script>
+// ── Static marketing hero-shot — Phase 3 (Dark Ages / primordial black
+// holes) — the void+green-fuzz-rim+green-halo recipe below matches real
+// drawPBH()'s event-horizon/halo layers, re-scaled for a hero composition;
+// same real green field-lightning color (30,255,110 core / 20,200,80 halo)
+// and the real Phase 3 background-bloom target. See the Prelogue file for
+// the general shared-recipe writeup.
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=1920,H=1080,CX=W/2,CY=H/2;
+function fitStage(){const s=Math.min(window.innerWidth/W,window.innerHeight/H);document.getElementById('stage').style.transform=`scale(${s})`;}
+fitStage();window.addEventListener('resize',fitStage);
+
+function bolt(x1,y1,x2,y2,coreRgb,haloRgb,alpha){
+  const segs=4+Math.floor(Math.random()*3);const pts=[{x:x1,y:y1}];
+  for(let s=1;s<segs;s++){const t=s/segs,spread=22*(1-Math.abs(t-0.5)*1.8);pts.push({x:x1+(x2-x1)*t+(Math.random()-0.5)*spread,y:y1+(y2-y1)*t+(Math.random()-0.5)*spread});}
+  pts.push({x:x2,y:y2});
+  ctx.globalCompositeOperation='screen';
+  const a=alpha*(0.6+Math.random()*0.4);
+  ctx.strokeStyle=`rgba(${coreRgb},${a})`;ctx.lineWidth=1+Math.random()*0.8;
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.stroke();
+  ctx.strokeStyle=`rgba(${haloRgb},${a*0.3})`;ctx.lineWidth=4;
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);ctx.stroke();
+  ctx.globalCompositeOperation='source-over';
+}
+function bgBloom(rgbArr,alpha){
+  ctx.globalCompositeOperation='lighter';
+  const positions=[[0.22,0.22],[0.78,0.22],[0.22,0.82],[0.78,0.82],[0.5,0.5]];
+  for(const[fx,fy]of positions){
+    const x=W*fx+(Math.random()-0.5)*W*0.1,y=H*fy+(Math.random()-0.5)*H*0.1,r=380+Math.random()*220;
+    const g=ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0,`rgba(${rgbArr[0]},${rgbArr[1]},${rgbArr[2]},${alpha})`);g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalCompositeOperation='source-over';
+}
+function ringPts(cx,cy,count,rMin,rMax){
+  const pts=[];
+  for(let i=0;i<count;i++){const a=(i/count)*Math.PI*2+(Math.random()-0.5)*(Math.PI*2/count)*0.7,r=rMin+Math.random()*(rMax-rMin);pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r});}
+  return pts;
+}
+
+const GREEN_CORE='30,255,110',GREEN_HALO='20,200,80';
+
+ctx.fillStyle='#010108';ctx.fillRect(0,0,W,H);
+bgBloom([45,150,95],0.24); // real Phase 3 BLOOM_TARGETS entry
+
+function drawPBH(cx,cy,r){
+  ctx.globalCompositeOperation='screen';
+  const fuzz=[{w:9,a:0.09},{w:6,a:0.15},{w:3.5,a:0.24},{w:1.8,a:0.5}];
+  for(const f of fuzz){ctx.strokeStyle=`rgba(${GREEN_CORE},${f.a})`;ctx.lineWidth=f.w;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();}
+  const glowR=r*5;
+  const g=ctx.createRadialGradient(cx,cy,r*0.8,cx,cy,glowR);
+  g.addColorStop(0,`rgba(${GREEN_CORE},0.11)`);g.addColorStop(0.5,`rgba(${GREEN_HALO},0.045)`);g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,glowR,0,Math.PI*2);ctx.fill();
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='#000000';ctx.beginPath();ctx.arc(cx,cy,r*0.92,0,Math.PI*2);ctx.fill();
+  const rimPts=7;
+  for(let i=0;i<rimPts;i++){
+    const a1=(i/rimPts)*Math.PI*2,a2=((i+1)/rimPts)*Math.PI*2;
+    bolt(cx+Math.cos(a1)*r,cy+Math.sin(a1)*r,cx+Math.cos(a2)*r,cy+Math.sin(a2)*r,GREEN_CORE,GREEN_HALO,0.7);
+  }
+}
+function drawPhoton(x,y,ang){
+  ctx.globalCompositeOperation='screen';
+  const len=34,dx=Math.cos(ang)*len,dy=Math.sin(ang)*len;
+  const g=ctx.createRadialGradient(x,y,0,x,y,26);
+  g.addColorStop(0,'rgba(255,225,150,0.55)');g.addColorStop(1,'rgba(255,225,150,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,26,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(255,240,200,0.85)';ctx.lineWidth=3;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x-dx,y-dy);ctx.lineTo(x+dx*0.3,y+dy*0.3);ctx.stroke();
+  ctx.globalCompositeOperation='source-over';
+}
+
+// Smaller black holes scattered around, each pulling in a scatter of photon streaks
+const holes=ringPts(CX,CY,6,320,1150).map(p=>({...p,r:36+Math.random()*26}));
+for(const h of holes){
+  drawPBH(h.x,h.y,h.r);
+  for(const p of ringPts(h.x,h.y,7,h.r*2.2,h.r*5.5)){
+    const ang=Math.atan2(h.y-p.y,h.x-p.x);
+    drawPhoton(p.x,p.y,ang);
+    if(Math.random()<0.5)bolt(h.x,h.y,p.x,p.y,GREEN_CORE,GREEN_HALO,0.4);
+  }
+}
+// A few extra loose photon streaks drifting through open space
+for(const p of ringPts(CX,CY,14,150,1300)){drawPhoton(p.x,p.y,Math.random()*Math.PI*2);}
+
+// Player — the largest black hole, dead center, actively feeding
+drawPBH(CX,CY,92);
+for(const p of ringPts(CX,CY,10,220,520)){
+  const ang=Math.atan2(CY-p.y,CX-p.x);
+  drawPhoton(p.x,p.y,ang);
+  bolt(CX,CY,p.x,p.y,GREEN_CORE,GREEN_HALO,0.6);
+}
+</script>
+</body>
+</html>
