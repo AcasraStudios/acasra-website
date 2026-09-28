@@ -146,7 +146,7 @@ p+p{margin-top:14px;}
   border-color:transparent;
 }
 .btn.primary:hover{filter:brightness(1.12);}
-.btn-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:28px;}
+.btn-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:30px;}
 
 /* ── Full hero (Home) ────────────────────────────────────────────────── */
 .hero-full{
@@ -165,14 +165,18 @@ p+p{margin-top:14px;}
     radial-gradient(ellipse 70% 60% at 20% 30%, rgba(5,6,8,0.25), transparent 60%),
     linear-gradient(180deg,rgba(5,6,8,0.45) 0%,rgba(5,6,8,0.55) 45%,rgba(5,6,8,0.97) 100%);
 }
-.hero-full .wrap{position:relative;z-index:1;}
-.hero-logo{height:190px;width:auto;max-width:100%;margin-bottom:14px;}
-.hero-full .lede{max-width:540px;margin-bottom:6px;}
+.hero-full .wrap{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;
+  text-align:center;
+}
+.hero-logo{height:190px;width:auto;max-width:100%;margin:0 auto 22px;}
+.hero-full .lede{max-width:540px;margin:0 auto 18px;}
 .release-date{
   font-size:11px;letter-spacing:2px;text-transform:uppercase;
-  color:var(--ink-faint);margin:10px 0 0;
+  color:var(--ink-faint);margin:0 0 6px;
 }
-.hero-full .btn-row{margin-top:20px;}
+.hero-full .btn-row{margin-top:26px;justify-content:center;}
 
 @media(max-width:640px){
   .hero-logo{height:110px;}
@@ -199,7 +203,7 @@ p+p{margin-top:14px;}
 /* ── Plain page header (Contact / World Records / Legal) — no photo ──── */
 .page-header{
   position:relative;
-  padding:64px 0 8px;
+  padding:64px 0 32px;
   border-bottom:1px solid var(--line);
   overflow:hidden;
 }
@@ -347,7 +351,9 @@ footer{
   transition:transform 0.2s ease;
 }
 .legal-accordion details[open] summary::after{content:'\2212';}
-.legal-accordion .legal-body{padding:0 2px 30px;}
+.legal-accordion .legal-body{padding:6px 2px 32px;}
+.legal-accordion .legal-body h3{margin-top:22px;}
+.legal-accordion .legal-body h3:first-child{margin-top:0;}
 
 /* ── Game capsule (Games landing page) ───────────────────────────────── */
 .game-capsule{
