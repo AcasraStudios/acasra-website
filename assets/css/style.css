@@ -71,7 +71,7 @@ body::before{
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
 }
 .brand{display:flex;align-items:center;gap:12px;}
-.brand img{height:28px;width:auto;}
+.brand img{height:44px;width:auto;}
 nav.main-nav{display:flex;gap:8px;flex-wrap:wrap;}
 nav.main-nav a{
   position:relative;
@@ -166,11 +166,16 @@ p+p{margin-top:14px;}
     linear-gradient(180deg,rgba(5,6,8,0.45) 0%,rgba(5,6,8,0.55) 45%,rgba(5,6,8,0.97) 100%);
 }
 .hero-full .wrap{position:relative;z-index:1;}
-.hero-logo{height:130px;width:auto;max-width:100%;margin-bottom:26px;}
-.hero-full .lede{max-width:540px;}
+.hero-logo{height:190px;width:auto;max-width:100%;margin-bottom:14px;}
+.hero-full .lede{max-width:540px;margin-bottom:6px;}
+.release-date{
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--ink-faint);margin:10px 0 0;
+}
+.hero-full .btn-row{margin-top:20px;}
 
 @media(max-width:640px){
-  .hero-logo{height:78px;}
+  .hero-logo{height:110px;}
 }
 
 /* ── Mini hero (Studio / Games page headers) ─────────────────────────── */
@@ -266,6 +271,7 @@ p+p{margin-top:14px;}
 }
 .shot:hover{border-color:var(--line-strong);}
 .shot iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;pointer-events:none;}
+.shot img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
 .shot .shot-label{
   position:absolute;bottom:0;left:0;right:0;padding:8px 12px;
   font-size:9px;letter-spacing:2px;text-transform:uppercase;
@@ -342,6 +348,15 @@ footer{
 }
 .legal-accordion details[open] summary::after{content:'\2212';}
 .legal-accordion .legal-body{padding:0 2px 30px;}
+
+/* ── Game capsule (Games landing page) ───────────────────────────────── */
+.game-capsule{
+  display:block;max-width:520px;
+  border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;transition:transform 0.18s ease,border-color 0.18s ease;
+}
+.game-capsule img{width:100%;display:block;}
+.game-capsule:hover{transform:translateY(-4px);border-color:var(--line-strong);}
 
 /* ── Placeholder state (World Records) ───────────────────────────────── */
 .placeholder-box{
